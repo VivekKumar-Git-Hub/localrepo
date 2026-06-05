@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Java Tic-Tac-Toe Preview</title>
+    <!-- Tailwind CSS for high-quality utility classes -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+        
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        .code-font {
+            font-family: 'Fira Code', monospace;
+        }
+        /* Custom animated gradient for winning tiles */
+        @keyframes pulseGlow {
+            0%, 100% { transform: scale(1); filter: drop-shadow(0 0 15px rgba(99, 102, 241, 0.6)); }
+            50% { transform: scale(1.05); filter: drop-shadow(0 0 25px rgba(244, 63, 94, 0.8)); }
+        }
+        .winning-tile-glow {
+            animation: pulseGlow 1.5s infinite ease-in-out;
+        }
+        /* Terminal cursor blink */
+        .cursor-blink {
+            animation: blink 1s step-end infinite;
+        }
+        @keyframes blink {
+            from, to { background-color: transparent; }
+            50% { background-color: #38bdf8; }
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-full flex flex-col antialiased">
+
+    <!-- Top Navigation Header -->
+    <header class="border-b border-slate-800 bg-slate-900/50 backdrop-blur-md sticky top-0 z-50 px-6 py-4 flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+            <div class="bg-amber-500 text-slate-950 font-bold px-2.5 py-1 rounded-md text-xs tracking-wider">JAVA LEARN</div>
+            <h1 class="text-lg font-bold tracking-tight text-white flex items-center gap-2">
+                Tic-Tac-Toe Interactive Playroom
+            </h1>
+        </div>
+        <div class="text-sm text-slate-400 hidden sm:block">
+            Translating <code class="bg-slate-800 text-amber-400 px-2 py-1 rounded text-xs">TicTacToe.java</code> to Web Preview
+        </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+        
+        <!-- LEFT PANEL: Visual Interactive Game Board (7 cols on desktop) -->
+        <section class="lg:col-span-7 flex flex-col justify-between bg-slate-900/40 border border-slate-800/80 rounded-2xl p-6 shadow-xl backdrop-blur-sm">
+            
+            <!-- Game Mode Selector & Info -->
+            <div id="game-setup-screen" class="flex-1 flex flex-col justify-center items-center py-10 space-y-8">
+                <div class="text-center max-w-md space-y-3">
+                    <div class="w-16 h-16 bg-indigo-600/20 border border-indigo-500/30 text-indigo-400 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-indigo-500/10">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    </div>
+                    <h2 class="text-2xl font-extrabold text-white tracking-tight">Select Game Mode</h2>
+                    <p class="text-slate-400 text-sm">Choose how you'd like to run your TicTacToe game. The rules mirror the compiled Java code perfectly.</p>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-lg">
+                    <!-- Mode 1 Card -->
+                    <button onclick="startGame(1)" class="group relative flex flex-col p-5 bg-slate-800/40 hover:bg-slate-800/90 border border-slate-700/60 hover:border-indigo-500/60 rounded-xl text-left transition-all duration-300 shadow-md">
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-xs font-bold text-indigo-400 tracking-wider uppercase">Mode 1</span>
+                            <span class="text-lg">🤖</span>
+                        </div>
+                        <h3 class="text-lg font-bold text-white group-hover:text-indigo-300 transition-colors">vs. Computer AI</h3>
+                        <p class="text-slate-400 text-xs mt-1 leading-relaxed">Play against the Java AI sequence: Wins, Blocks, Center control, or Random spots.</p>
+                    </button>
+
+                    <!-- Mode 2 Card -->
+                    <button onclick="startGame(2)" class="group relative flex flex-col p-5 bg-slate-800/40 hover:bg-slate-800/90 border border-slate-700/60 hover:border-rose-500/60 rounded-xl text-left transition-all duration-300 shadow-md">
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-xs font-bold text-rose-400 tracking-wider uppercase">Mode 2</span>
+                            <span class="text-lg">👥</span>
+                        </div>
+                        <h3 class="text-lg font-bold text-white group-hover:text-rose-300 transition-colors">Player vs. Player</h3>
+                        <p class="text-slate-400 text-xs mt-1 leading-relaxed">Local hot-seat co-op mode. Pass the mouse/turn back and forth between X and O.</p>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Active Board Screen (Hidden by default) -->
+            <div id="game-board-screen" class="hidden flex-1 flex flex-col justify-between space-y-6">
+                <!-- HUD / Status Info -->
+                <div class="flex items-center justify-between bg-slate-800/30 p-4 rounded-xl border border-slate-800/60">
+                    <div>
+                        <div class="text-xs text-slate-400 font-semibold uppercase tracking-wider">Active Mode</div>
+                        <div id="mode-badge" class="text-sm font-bold text-white mt-0.5">Player vs AI</div>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <div class="text-right">
+                            <div class="text-xs text-slate-400 font-semibold uppercase tracking-wider">Current Turn</div>
+                            <div id="turn-indicator" class="text-sm font-bold text-indigo-400 flex items-center justify-end gap-1.5 mt-0.5">
+                                <span class="w-2.5 h-2.5 rounded-full bg-indigo-400 animate-pulse"></span>
+                                Player X
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3x3 Tic-Tac-Toe Grid -->
+                <div class="flex justify-center items-center py-4">
+                    <div class="grid grid-cols-3 gap-3 bg-slate-950 p-4 rounded-2xl border border-slate-800/80 shadow-inner w-full max-w-[340px] aspect-square">
+                        <!-- Top Row -->
+                        <button id="cell-0-0" onclick="handleCellClick(0,0)" class="aspect-square bg-slate-900 border border-slate-800/70 rounded-xl flex items-center justify-center text-3xl font-extrabold text-white transition-all duration-150 hover:bg-slate-800/80 active:scale-95 focus:outline-none"></button>
+                        <button id="cell-0-1" onclick="handleCellClick(0,1)" class="aspect-square bg-slate-900 border border-slate-800/70 rounded-xl flex items-center justify-center text-3xl font-extrabold text-white transition-all duration-150 hover:bg-slate-800/80 active:scale-95 focus:outline-none"></button>
+                        <button id="cell-0-2" onclick="handleCellClick(0,2)" class="aspect-square bg-slate-900 border border-slate-800/70 rounded-xl flex items-center justify-center text-3xl font-extrabold text-white transition-all duration-150 hover:bg-slate-800/80 active:scale-95 focus:outline-none"></button>
+                        
+                        <!-- Middle Row -->
+                        <button id="cell-1-0" onclick="handleCellClick(1,0)" class="aspect-square bg-slate-900 border border-slate-800/70 rounded-xl flex items-center justify-center text-3xl font-extrabold text-white transition-all duration-150 hover:bg-slate-800/80 active:scale-95 focus:outline-none"></button>
+                        <button id="cell-1-1" onclick="handleCellClick(1,1)" class="aspect-square bg-slate-900 border border-slate-800/70 rounded-xl flex items-center justify-center text-3xl font-extrabold text-white transition-all duration-150 hover:bg-slate-800/80 active:scale-95 focus:outline-none"></button>
+                        <button id="cell-1-2" onclick="handleCellClick(1,2)" class="aspect-square bg-slate-900 border border-slate-800/70 rounded-xl flex items-center justify-center text-3xl font-extrabold text-white transition-all duration-150 hover:bg-slate-800/80 active:scale-95 focus:outline-none"></button>
+                        
+                        <!-- Bottom Row -->
+                        <button id="cell-2-0" onclick="handleCellClick(2,0)" class="aspect-square bg-slate-900 border border-slate-800/70 rounded-xl flex items-center justify-center text-3xl font-extrabold text-white transition-all duration-150 hover:bg-slate-800/80 active:scale-95 focus:outline-none"></button>
+                        <button id="cell-2-1" onclick="handleCellClick(2,1)" class="aspect-square bg-slate-900 border border-slate-800/70 rounded-xl flex items-center justify-center text-3xl font-extrabold text-white transition-all duration-150 hover:bg-slate-800/80 active:scale-95 focus:outline-none"></button>
+                        <button id="cell-2-2" onclick="handleCellClick(2,2)" class="aspect-square bg-slate-900 border border-slate-800/70 rounded-xl flex items-center justify-center text-3xl font-extrabold text-white transition-all duration-150 hover:bg-slate-800/80 active:scale-95 focus:outline-none"></button>
+                    </div>
+                </div>
+
+                <!-- Footer Game Controls -->
+                <div class="flex items-center gap-3">
+                    <button onclick="resetToMenu()" class="flex-1 py-3 px-4 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white font-semibold rounded-xl text-sm transition border border-slate-700/60 active:scale-[0.98]">
+                        Change Mode
+                    </button>
+                    <button onclick="resetGame()" class="flex-1 py-3 px-4 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl text-sm transition shadow-lg shadow-indigo-500/25 active:scale-[0.98]">
+                        Restart Match
+                    </button>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- RIGHT PANEL: Live Interactive Terminal Console Log (5 cols on desktop) -->
+        <section class="lg:col-span-5 flex flex-col justify-between bg-slate-950 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl">
+            <!-- Terminal Header -->
+            <div class="bg-slate-900 px-4 py-3 flex items-center justify-between border-b border-slate-800">
+                <div class="flex items-center space-x-2">
+                    <div class="flex space-x-1.5">
+                        <span class="w-3 h-3 rounded-full bg-rose-500/80"></span>
+                        <span class="w-3 h-3 rounded-full bg-amber-500/80"></span>
+                        <span class="w-3 h-3 rounded-full bg-emerald-500/80"></span>
+                    </div>
+                    <span class="text-xs font-semibold tracking-wider text-slate-400 code-font ml-2">Terminal: javac TicTacToe.java</span>
+                </div>
+                <button onclick="clearTerminal()" class="text-xs text-slate-500 hover:text-slate-300 transition-colors code-font flex items-center gap-1.5">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    Clear
+                </button>
+            </div>
+
+            <!-- Terminal Content Box (Simulates real CLI logs) -->
+            <div id="terminal-screen" class="flex-1 p-5 overflow-y-auto max-h-[420px] lg:max-h-[500px] code-font text-xs md:text-sm space-y-2 flex flex-col justify-start">
+                <div class="text-slate-500">Last login: Fri Jun 5 10:02:45 on ttys001</div>
+                <div class="text-sky-400">$ javac TicTacToe.java</div>
+                <div class="text-sky-400">$ java TicTacToe</div>
+                <div class="text-emerald-400 mt-2 font-semibold">=========================================</div>
+                <div class="text-emerald-400 font-semibold">       WELCOME TO JAVA TIC-TAC-TOE       </div>
+                <div class="text-emerald-400 font-semibold mb-4">=========================================</div>
+                
+                <!-- This is where all live output gets appended -->
+                <div id="terminal-output" class="space-y-1.5"></div>
+                
+                <!-- Blinking active prompt line -->
+                <div id="terminal-prompt" class="flex items-center space-x-1.5 pt-2 text-sky-400">
+                    <span>$</span>
+                    <span id="prompt-text" class="text-slate-300">Select Game Mode...</span>
+                    <span class="inline-block w-2 h-4 cursor-blink"></span>
+                </div>
+            </div>
+
+            <!-- Helpful Java Learning Snippet Overlay -->
+            <div class="border-t border-slate-800 bg-slate-900/40 p-4">
+                <div class="flex items-start space-x-3">
+                    <span class="text-lg mt-0.5">💡</span>
+                    <div>
+                        <h4 class="text-xs font-bold text-slate-200">Java Beginner Insight</h4>
+                        <p class="text-[11px] text-slate-400 mt-1 leading-relaxed">
+                            Under the hood, the terminal board prints represent a <code class="text-amber-400 bg-slate-800 px-1 py-0.5 rounded text-[10px]">for-loop</code> iteration across a 3x3 Multi-Dimensional array: <code class="text-emerald-400 bg-slate-800 px-1 py-0.5 rounded text-[10px]">board[row][col]</code>.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Custom Modal for Game Ends (Draw / Victory) -->
+    <div id="endgame-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
+        <div class="bg-slate-900 border border-slate-800 max-w-sm w-full rounded-2xl p-6 shadow-2xl text-center space-y-6 transform scale-95 transition-transform">
+            <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-3xl" id="modal-emoji">
+                🏆
+            </div>
+            <div class="space-y-2">
+                <h3 class="text-xl font-extrabold text-white" id="modal-title">Match Over!</h3>
+                <p class="text-sm text-slate-400" id="modal-desc">Details of the winning action will appear here.</p>
+            </div>
+            <div class="flex gap-3">
+                <button onclick="closeModalAndReset()" class="flex-1 py-3 px-4 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl text-sm transition duration-150 shadow-lg shadow-indigo-500/20 active:scale-95">
+                    Play Again
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Page Footer -->
+    <footer class="text-center py-4 text-xs text-slate-500 border-t border-slate-900 mt-auto bg-slate-950/50">
+        Tic-Tac-Toe Java Simulation &middot; Click elements on the grid to simulate user keyboard coordinates.
+    </footer>
+
+    <!-- Interactive Logic & Emulation Script -->
+    <script>
+        // Game variables
+        let board = [
+            [' ', ' ', ' '],
+            [' ', ' ', ' '],
+            [' ', ' ', ' ']
+        ];
+        let gameMode = 1; // 1 = vs Computer, 2 = vs Player
+        let currentPlayer = 'X';
+        let gameInProgress = false;
+
+        const EMPTY = ' ';
+        const PLAYER_X = 'X';
+        const PLAYER_O = 'O';
+
+        // Selectors
+        const setupScreen = document.getElementById('game-setup-screen');
+        const boardScreen = document.getElementById('game-board-screen');
+        const terminalOutput = document.getElementById('terminal-output');
+        const terminalScreen = document.getElementById('terminal-screen');
+        const turnIndicator = document.getElementById('turn-indicator');
+        const modeBadge = document.getElementById('mode-badge');
+        const promptText = document.getElementById('prompt-text');
+        
+        // Modal Selectors
+        const endgameModal = document.getElementById('endgame-modal');
+        const modalEmoji = document.getElementById('modal-emoji');
+        const modalTitle = document.getElementById('modal-title');
+        const modalDesc = document.getElementById('modal-desc');
+
+        /**
+         * Appends styled messages to the emulated Java Terminal
+         */
+        function printToTerminal(text, type = 'normal') {
+            const div = document.createElement('div');
+            
+            if (type === 'system') {
+                div.className = 'text-slate-400 italic';
+            } else if (type === 'action') {
+                div.className = 'text-amber-400 font-medium';
+            } else if (type === 'win') {
+                div.className = 'text-emerald-400 font-bold bg-emerald-950/40 p-2 border border-emerald-900/50 rounded-lg mt-1';
+            } else if (type === 'error') {
+                div.className = 'text-rose-400 font-semibold';
+            } else {
+                div.className = 'text-slate-300';
+            }
+
+            // Convert string matches to style lines dynamically
+            if (text.startsWith('--- Turn:')) {
+                div.className = 'text-indigo-400 font-bold border-t border-slate-800/80 pt-2 mt-2';
+            }
+            
+            div.textContent = text;
+            terminalOutput.appendChild(div);
+            
+            // Auto-scroll terminal to bottom
+            terminalScreen.scrollTop = terminalScreen.scrollHeight;
+        }
+
+        /**
+         * Clears all log history in the console emulator
+         */
+        function clearTerminal() {
+            terminalOutput.innerHTML = '';
+        }
+
+        /**
+         * Resets UI and goes back to Setup mode selection screen
+         */
+        function resetToMenu() {
+            setupScreen.classList.remove('hidden');
+            boardScreen.classList.add('hidden');
+            gameInProgress = false;
+            promptText.textContent = "Select Game Mode...";
+            printToTerminal("User reset setup. Redirecting back to Mode Selection.", "system");
+        }
+
+        /**
+         * Generates the board graphic output in the Java Console style
+         */
+        function printJavaConsoleBoard() {
+            printToTerminal("\n    1   2   3", "system");
+            printToTerminal("  -------------", "system");
+            for (let i = 0; i < 3; i++) {
+                let rowStr = `  ${i + 1} | ${board[i][0]} | ${board[i][1]} | ${board[i][2]} |`;
+                printToTerminal(rowStr, "system");
+                printToTerminal("  -------------", "system");
+            }
+        }
+
+        /**
+         * Initializes / Starts a new Tic-Tac-Toe Game Session
+         */
+        function startGame(mode) {
+            gameMode = mode;
+            board = [
+                [' ', ' ', ' '],
+                [' ', ' ', ' '],
+                [' ', ' ', ' ']
+            ];
+            currentPlayer = PLAYER_X;
+            gameInProgress = true;
+
+            // Update UI elements
+            setupScreen.classList.add('hidden');
+            boardScreen.classList.remove('hidden');
+            
+            if (gameMode === 1) {
+                modeBadge.textContent = "Player vs. Computer";
+                promptText.textContent = "Select a spot on grid...";
+                printToTerminal("\n[Game Mode 1 Selected] User vs AI Computer has started!");
+            } else {
+                modeBadge.textContent = "Player vs. Player (Local)";
+                promptText.textContent = "Player X's turn...";
+                printToTerminal("\n[Game Mode 2 Selected] Head-to-Head local multiplayer has started!");
+            }
+
+            // Draw initial state
+            updateVisualBoard();
+            printJavaConsoleBoard();
+            printToTerminal(`\n--- Turn: Player ${currentPlayer} ---`);
+        }
+
+        /**
+         * Synchronizes array values onto the visual clickable buttons
+         */
+        function updateVisualBoard() {
+            for (let r = 0; r < 3; r++) {
+                for (let c = 0; c < 3; c++) {
+                    const btn = document.getElementById(`cell-${r}-${c}`);
+                    btn.className = "aspect-square bg-slate-900 border border-slate-800/70 rounded-xl flex items-center justify-center text-4xl font-extrabold transition-all duration-150 hover:bg-slate-800/80 active:scale-95 focus:outline-none";
+                    
+                    if (board[r][c] === PLAYER_X) {
+                        btn.innerHTML = `<span class="bg-gradient-to-tr from-indigo-400 to-violet-500 bg-clip-text text-transparent">X</span>`;
+                    } else if (board[r][c] === PLAYER_O) {
+                        btn.innerHTML = `<span class="bg-gradient-to-tr from-rose-400 to-pink-500 bg-clip-text text-transparent">O</span>`;
+                    } else {
+                        btn.innerHTML = "";
+                    }
+                }
+            }
+
+            // Update Turn UI HUD
+            if (currentPlayer === PLAYER_X) {
+                turnIndicator.innerHTML = `<span class="w-2.5 h-2.5 rounded-full bg-indigo-400 animate-pulse"></span> Player X`;
+                turnIndicator.className = "text-sm font-bold text-indigo-400 flex items-center justify-end gap-1.5 mt-0.5";
+            } else {
+                turnIndicator.innerHTML = `<span class="w-2.5 h-2.5 rounded-full bg-rose-400 animate-pulse"></span> Player O`;
+                turnIndicator.className = "text-sm font-bold text-rose-400 flex items-center justify-end gap-1.5 mt-0.5";
+            }
+        }
+
+        /**
+         * Restarts current session with the exact same mode configuration
+         */
+        function resetGame() {
+            startGame(gameMode);
+        }
+
+        /**
+         * Event listener handles grid button clicks
+         */
+        function handleCellClick(row, col) {
+            if (!gameInProgress) return;
+
+            // Ensure computer isn't moving
+            if (gameMode === 1 && currentPlayer === PLAYER_O) return;
+
+            // Try applying user action
+            if (board[row][col] === EMPTY) {
+                // Mimic console print inputs in CLI
+                printToTerminal(`Enter row (1-3) and column (1-3) separated by space: ${row+1} ${col+1}`, "action");
+                
+                board[row][col] = currentPlayer;
+                updateVisualBoard();
+                printJavaConsoleBoard();
+
+                if (checkGameStatus()) return;
+
+                // Move Turn
+                currentPlayer = (currentPlayer === PLAYER_X) ? PLAYER_O : PLAYER_X;
+                updateVisualBoard();
+
+                if (gameMode === 1 && currentPlayer === PLAYER_O) {
+                    promptText.textContent = "Computer is deciding...";
+                    printToTerminal(`\n--- Turn: Player ${currentPlayer} ---`);
+                    printToTerminal("Computer is thinking...");
+                    
+                    // Trigger Simulated delay for Computer AI move
+                    setTimeout(() => {
+                        computerMove();
+                    }, 800);
+                } else {
+                    promptText.textContent = `Player ${currentPlayer}'s turn...`;
+                    printToTerminal(`\n--- Turn: Player ${currentPlayer} ---`);
+                }
+
+            } else {
+                printToTerminal("That spot is already taken! Try another one.", "error");
+            }
+        }
+
+        /**
+         * Evaluates win/draw rules of the state
+         */
+        function checkGameStatus() {
+            const winningCells = checkWin(board, currentPlayer);
+            if (winningCells) {
+                gameInProgress = false;
+                highlightWinningCells(winningCells);
+                
+                let winMsg = "";
+                if (gameMode === 1 && currentPlayer === PLAYER_O) {
+                    winMsg = "🤖 The Computer (O) wins! Better luck next time!";
+                    showEndgameModal("🤖 Computer Wins!", "The AI managed to outsmart your tactics. Play another match to build your patterns!", "💥");
+                } else {
+                    winMsg = `🏆 Congratulations! Player ${currentPlayer} wins the game!`;
+                    showEndgameModal(`🏆 Player ${currentPlayer} Wins!`, "Exceptional strategic positioning! You've achieved three-in-a-row perfectly.", "✨");
+                }
+
+                printToTerminal(winMsg, "win");
+                promptText.textContent = "Game Over! Winner: " + currentPlayer;
+                return true;
+            }
+
+            if (isBoardFull(board)) {
+                gameInProgress = false;
+                printToTerminal("🤝 It's a draw! Well played both!", "win");
+                promptText.textContent = "Game Over! Draw game.";
+                showEndgameModal("🤝 Draw Match!", "A perfect defensive balance from both players. Nobody was left open!", "🛡️");
+                return true;
+            }
+
+            return false;
+        }
+
+        /**
+         * Emulated Computer AI move structure based on custom Java logic
+         */
+        function computerMove() {
+            if (!gameInProgress) return;
+
+            // Rule 1: Check if computer (O) can win
+            if (tryWinOrBlock(PLAYER_O)) {
+                postComputerMove();
+                return;
+            }
+
+            // Rule 2: Check if computer needs to block player (X) from winning
+            if (tryWinOrBlock(PLAYER_X)) {
+                postComputerMove();
+                return;
+            }
+
+            // Rule 3: Take the center square if available
+            if (board[1][1] === EMPTY) {
+                board[1][1] = PLAYER_O;
+                postComputerMove();
+                return;
+            }
+
+            // Rule 4: Pick a random empty cell
+            while (true) {
+                let r = Math.floor(Math.random() * 3);
+                let c = Math.floor(Math.random() * 3);
+                if (board[r][c] === EMPTY) {
+                    board[r][c] = PLAYER_O;
+                    postComputerMove();
+                    break;
+                }
+            }
+        }
+
+        /**
+         * Finalize step for computer move action sequence
+         */
+        function postComputerMove() {
+            updateVisualBoard();
+            printJavaConsoleBoard();
+            
+            if (checkGameStatus()) return;
+
+            currentPlayer = PLAYER_X;
+            promptText.textContent = "Your turn (Player X)...";
+            updateVisualBoard();
+            printToTerminal(`\n--- Turn: Player ${currentPlayer} ---`);
+        }
+
+        /**
+         * Translates helper method logic: simulates symbol placements for AI wins/blocks
+         */
+        function tryWinOrBlock(symbol) {
+            for (let r = 0; r < 3; r++) {
+                for (let c = 0; c < 3; c++) {
+                    if (board[r][c] === EMPTY) {
+                        // Test simulated placement
+                        board[r][c] = symbol;
+                        if (checkWin(board, symbol)) {
+                            // Keep the move but replace with computer's permanent O marker
+                            board[r][c] = PLAYER_O;
+                            return true;
+                        }
+                        // Revert placement if no positive match outcome
+                        board[r][c] = EMPTY;
+                    }
+                }
+            }
+            return false;
+        }
+
+        /**
+         * Validates if the specified player has achieved 3-in-a-row.
+         * Returns array of coordinate cells if true, otherwise returns null.
+         */
+        function checkWin(b, s) {
+            // Rows
+            for (let i = 0; i < 3; i++) {
+                if (b[i][0] === s && b[i][1] === s && b[i][2] === s) {
+                    return [[i,0], [i,1], [i,2]];
+                }
+            }
+            // Columns
+            for (let i = 0; i < 3; i++) {
+                if (b[0][i] === s && b[1][i] === s && b[2][i] === s) {
+                    return [[0,i], [1,i], [2,i]];
+                }
+            }
+            // Diagonals
+            if (b[0][0] === s && b[1][1] === s && b[2][2] === s) {
+                return [[0,0], [1,1], [2,2]];
+            }
+            if (b[0][2] === s && b[1][1] === s && b[2][0] === s) {
+                return [[0,2], [1,1], [2,0]];
+            }
+
+            return null;
+        }
+
+        /**
+         * Check if all slots are full
+         */
+        function isBoardFull(b) {
+            for (let r = 0; r < 3; r++) {
+                for (let c = 0; c < 3; c++) {
+                    if (b[r][c] === EMPTY) return false;
+                }
+            }
+            return true;
+        }
+
+        /**
+         * Highlights winning coordinate path cells
+         */
+        function highlightWinningCells(cells) {
+            cells.forEach(coord => {
+                const cellBtn = document.getElementById(`cell-${coord[0]}-${coord[1]}`);
+                cellBtn.classList.add('winning-tile-glow', 'bg-indigo-950/80', 'border-indigo-400');
+            });
+        }
+
+        /**
+         * Triggers full-screen visual modal alert
+         */
+        function showEndgameModal(title, desc, emoji) {
+            modalTitle.textContent = title;
+            modalDesc.textContent = desc;
+            modalEmoji.textContent = emoji;
+            endgameModal.classList.remove('hidden');
+        }
+
+        /**
+         * Closes modal and starts a fresh clean game setup
+         */
+        function closeModalAndReset() {
+            endgameModal.classList.add('hidden');
+            resetGame();
+        }
+    </script>
+</body>
+</html>
